@@ -102,7 +102,7 @@
 
 <script type="module">
     import { GoogleGenAI } from "@google/genai";
-    import { SETTINGS, PROMPTS } from "./gemini/config.js";
+    import { SETTINGS, PROMPTS } from "./config.js";
 
     const ai = new GoogleGenAI({ apiKey: SETTINGS.API_KEY });
     let chatHistory = [];
