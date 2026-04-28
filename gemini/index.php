@@ -74,7 +74,7 @@
 
 <div id="sidebar">
     <div class="search-box">
-        <input type="text" id="filter" placeholder="Search actors..." onkeyup="filterActors()">
+        <input type="text" id="filter" placeholder="Find actors..." onkeyup="filterActors()">
     </div>
     <div id="button-list"></div>
 </div>
