@@ -74,7 +74,7 @@
 
 <div id="sidebar">
     <div class="search-box">
-        <input type="text" id="filter" placeholder="Search actors..." onkeyup="filterActors()">
+        <input type="text" id="filter" placeholder="Find actors..." onkeyup="filterActors()">
     </div>
     <div id="button-list"></div>
 </div>
@@ -102,7 +102,7 @@
 
 <script type="module">
     import { GoogleGenAI } from "@google/genai";
-    import { SETTINGS, PROMPTS } from "./config.js";
+    import { SETTINGS, PROMPTS } from "./config.js?v=1.3";
 
     const ai = new GoogleGenAI({ apiKey: SETTINGS.API_KEY });
     let chatHistory = [];
