@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini 3 Actor Switcher</title>
+    <title>Gemini Actor Picker</title>
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
@@ -74,7 +74,7 @@
 
 <div id="sidebar">
     <div class="search-box">
-        <input type="text" id="filter" placeholder="Search roles..." onkeyup="filterActors()">
+        <input type="text" id="filter" placeholder="Search actors..." onkeyup="filterActors()">
     </div>
     <div id="button-list"></div>
 </div>
