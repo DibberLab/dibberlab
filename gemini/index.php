@@ -1,6 +1,7 @@
 <?php
-// This is a simple way to load the key without a heavy library
-$env = parse_ini_file('.env');
+// Use __DIR__ to ensure it looks in the same folder as this script
+$env_path = __DIR__ . '/.env';
+$env = parse_ini_file($env_path);
 $api_key = $env['API_KEY'] ?? ''; 
 ?>
 <!DOCTYPE html>
@@ -112,10 +113,15 @@ $api_key = $env['API_KEY'] ?? '';
 </div>
 
 <script type="module">
-    import { GoogleGenAI } from "@google/genai";
-    import { SETTINGS, PROMPTS } from "./config.js?v=1.3";
 
-    const ai = new GoogleGenAI({ apiKey: SETTINGS.API_KEY });
+    import { GoogleGenAI } from "@google/genai"; // This MUST be here
+    // Remove SETTINGS from the import if it's only used for the API key
+    import { PROMPTS, SETTINGS } from "./config.js?v=1.3"; 
+
+    // Use the global variable you defined at the top of the file
+    console.log("Checking API Key...", window.ENV_CONFIG.API_KEY); 
+
+    const ai = new GoogleGenAI({ apiKey: window.ENV_CONFIG.API_KEY });
     let chatHistory = [];
 
     const list = document.getElementById('button-list');
