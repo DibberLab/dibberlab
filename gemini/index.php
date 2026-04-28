@@ -1,3 +1,8 @@
+<?php
+// This is a simple way to load the key without a heavy library
+$env = parse_ini_file('.env');
+$api_key = $env['API_KEY'] ?? ''; 
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +11,13 @@
     <title>Gemini Actor Picker</title>
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+    <script>
+    // This creates a global variable the browser can see
+    window.ENV_CONFIG = {
+        API_KEY: "<?php echo $api_key; ?>"
+    };
+    </script>
+
     <script type="importmap">
       {
         "imports": {

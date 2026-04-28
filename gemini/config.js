@@ -1,5 +1,6 @@
 export const SETTINGS = {
-    API_KEY: "AIzaSyB1HC7thPgSjNwGIonHfjyxzIDJ1zVmTQ8",
+    // It looks for the global variable first; falls back to empty string
+    API_KEY: window.ENV_CONFIG?.API_KEY || "",
     MODEL_NAME: "gemini-3.1-flash-lite-preview"
 };
 
