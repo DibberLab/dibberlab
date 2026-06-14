@@ -4,479 +4,710 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guitar Tuner | Dibber Lab</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="/dibber-header.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        #tuning-meter {
-            position: relative;
-            height: 28px;
-            background-color: #1f2937;
-            border-radius: 9999px;
-            overflow: hidden;
-            border: 2px solid #374151;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0b10;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        #tuning-needle {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 4px;
-            height: 100%;
-            background-color: #f59e0b; /* Default Amber */
-            transform: translateX(-50%);
-            border-radius: 2px;
-            z-index: 10;
-            transition: left 0.1s linear, background-color 0.2s;
-        }
-        #center-line {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background-color: #4b5563;
-            transform: translateX(-50%);
-            z-index: 1;
-        }
-        
-        /* Volume Meter */
-        #volume-meter-container {
+
+        .tuner-card {
+            background: #111118;
+            border: 1px solid #1c1c28;
+            border-radius: 28px;
+            padding: 32px 28px 28px;
             width: 100%;
-            height: 4px;
-            background-color: #111827;
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 12px;
+            max-width: 400px;
+            margin: auto;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.7);
+            transition: border-color 0.5s ease, box-shadow 0.5s ease;
         }
-        #volume-bar {
+        .tuner-card.in-tune {
+            border-color: rgba(16, 185, 129, 0.35);
+            box-shadow: 0 30px 90px rgba(0,0,0,0.7), 0 0 70px rgba(16, 185, 129, 0.1);
+        }
+
+        /* --- Header --- */
+        .tuner-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .tuner-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #3a3a50;
+        }
+
+        /* --- String Buttons --- */
+        .strings-row {
+            display: flex;
+            gap: 7px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .string-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1.5px solid #222232;
+            background: #16161f;
+            color: #4b5563;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+        }
+        .string-btn.active {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            box-shadow: 0 0 18px rgba(245, 158, 11, 0.2);
+        }
+        .string-btn.in-tune {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            box-shadow: 0 0 22px rgba(16, 185, 129, 0.3);
+        }
+
+        /* --- Dial Canvas --- */
+        #dial-canvas {
+            display: block;
+            margin: 0 auto -10px;
+            max-width: 100%;
+        }
+
+        /* --- Note Display --- */
+        .note-display {
+            text-align: center;
+            margin: 12px 0 6px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        .note-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 78px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -3px;
+            transition: color 0.35s ease;
+            color: #2a2a38;
+        }
+        .note-name.active  { color: #e2e8f0; }
+        .note-name.in-tune { color: #10b981; }
+        .octave-sup {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 22px;
+            color: #374151;
+            align-self: flex-start;
+            margin-top: 14px;
+            transition: color 0.35s ease;
+        }
+        .octave-sup.active  { color: #6b7280; }
+        .octave-sup.in-tune { color: #10b981; }
+
+        /* --- Status Row --- */
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+            min-height: 28px;
+            margin-bottom: 22px;
+        }
+        .meta-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #2e2e40;
+            transition: color 0.3s ease;
+            min-width: 70px;
+        }
+        .meta-label.active { color: #4b5563; }
+        .tuning-status-pill {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 999px;
+            border: 1.5px solid transparent;
+            transition: all 0.3s ease;
+            color: transparent;
+            border-color: transparent;
+        }
+        .tuning-status-pill.flat    { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.08); }
+        .tuning-status-pill.sharp   { color: #f87171; border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.08); }
+        .tuning-status-pill.in-tune { color: #10b981; border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.1); }
+
+        /* --- Input Level --- */
+        .level-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .level-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #252535;
+            white-space: nowrap;
+        }
+        .level-track {
+            flex: 1;
+            height: 3px;
+            background: #1a1a26;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .level-fill {
             height: 100%;
             width: 0%;
-            background-color: #3b82f6;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 2px;
             transition: width 0.05s linear;
         }
 
-        /* Status Styles */
-        .status-perfect { color: #34d399; text-shadow: 0 0 15px rgba(52, 211, 153, 0.6); }
-        .status-flat { color: #fbbf24; }
-        .status-sharp { color: #f87171; } /* Red for sharp */
-
-        .string-btn { transition: all 0.2s ease-in-out; }
-        .string-btn.active {
-            background-color: #f59e0b;
-            color: white;
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        /* --- Gain Row --- */
+        .gain-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
         }
-
-        /* Glow Effect for Container */
-        .glow-success {
-             border-color: #34d399 !important;
-             box-shadow: 0 0 40px rgba(52, 211, 153, 0.2), inset 0 0 20px rgba(52, 211, 153, 0.1);
-             background-color: rgba(6, 78, 59, 0.4);
+        .gain-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #252535;
+            white-space: nowrap;
         }
-        .glow-warn {
-             border-color: #fbbf24 !important;
-             box-shadow: 0 0 20px rgba(251, 191, 36, 0.1);
+        .gain-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #374151;
+            min-width: 28px;
+            text-align: right;
         }
-        
-        #tuner-display { transition: all 0.3s ease; }
-        
-        /* Slider */
-        input[type=range] {
-            -webkit-appearance: none; background: transparent; 
-        }
+        input[type=range] { -webkit-appearance: none; background: transparent; flex: 1; }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 16px; width: 16px;
-            border-radius: 50%; background: #f59e0b; cursor: pointer; margin-top: -6px; 
+            -webkit-appearance: none; height: 13px; width: 13px;
+            border-radius: 50%; background: #374151; cursor: pointer; margin-top: -5px;
         }
         input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer; background: #4b5563; border-radius: 2px;
+            height: 3px; background: #1a1a26; border-radius: 2px;
         }
+
+        /* --- Main Button --- */
+        .main-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 14px;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .main-btn.start {
+            background: #10b981;
+            color: #fff;
+            box-shadow: 0 6px 28px rgba(16, 185, 129, 0.28);
+        }
+        .main-btn.start:hover { box-shadow: 0 6px 36px rgba(16, 185, 129, 0.44); transform: translateY(-1px); }
+        .main-btn.stop {
+            background: #1c1c28;
+            color: #6b7280;
+            border: 1.5px solid #252535;
+            box-shadow: none;
+        }
+        .main-btn.stop:hover { color: #ef4444; border-color: #ef4444; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+<body>
 
-    <main class="flex-grow px-4 flex items-center justify-center">
-        <div class="w-full max-w-sm mx-auto bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-6 md:p-8">
-            
-            <h1 class="text-3xl font-bold text-center mb-2 text-amber-400">Guitar Tuner</h1>
-            <p id="sub-heading" class="text-center text-gray-400 mb-6 text-sm">Standard Tuning (EADGBe)</p>
+<main style="flex:1; display:flex; align-items:center; justify-content:center; padding: 48px 16px;">
+    <div class="tuner-card" id="tuner-card">
 
-            <div id="string-select" class="grid grid-cols-6 gap-2 mb-6 opacity-50 transition-opacity duration-300">
-                </div>
-
-            <div id="tuner-display" class="bg-gray-900 rounded-xl p-6 mb-6 text-center border border-gray-700 relative">
-                
-                <div class="flex items-center justify-center h-24">
-                     <p class="text-8xl font-mono font-bold text-gray-200" id="note-name">--</p>
-                     <p class="text-3xl font-mono font-semibold text-gray-500 ml-2 pt-6" id="octave"></p>
-                </div>
-                
-                <p class="text-sm text-gray-500 font-mono mt-2 mb-4" id="note-freq">0.00 Hz</p>
-                
-                <div id="tuning-meter" class="w-full">
-                    <div id="center-line"></div>
-                    <div id="tuning-needle"></div>
-                </div>
-
-                <div id="volume-meter-container">
-                    <div id="volume-bar"></div>
-                </div>
-                
-                <div class="h-8 mt-6 flex items-center justify-center">
-                    <p class="text-xl font-bold tracking-wider uppercase" id="tuning-status">&nbsp;</p>
-                </div>
-            </div>
-
-            <div class="mb-8 px-2">
-                <div class="flex justify-between text-xs text-gray-400 mb-2">
-                    <span>Mic Boost</span>
-                    <span id="gain-val">100%</span>
-                </div>
-                <input type="range" id="gain-slider" min="1" max="5" step="0.1" value="1" class="w-full">
-            </div>
-
-            <button id="toggle-tuner-btn" class="w-full py-4 rounded-xl text-lg font-bold bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/50 transition-all transform hover:-translate-y-1">
-                START LISTENING
-            </button>
-
+        <div class="tuner-header">
+            <p class="tuner-title">Guitar Tuner &mdash; Standard EADGBe</p>
         </div>
-    </main>
 
-    <footer class="py-8 text-center text-gray-500 text-sm">
-        <p>&copy; <script>document.write(new Date().getFullYear())</script> Dibber Lab</p>
-    </footer>
+        <div class="strings-row" id="strings-row"></div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const toggleButton = document.getElementById('toggle-tuner-btn');
-        const tunerDisplay = document.getElementById('tuner-display');
-        const noteNameDisplay = document.getElementById('note-name');
-        const octaveDisplay = document.getElementById('octave');
-        const noteFreqDisplay = document.getElementById('note-freq');
-        const tuningNeedle = document.getElementById('tuning-needle');
-        const tuningStatus = document.getElementById('tuning-status');
-        const subHeading = document.getElementById('sub-heading');
-        const stringSelectContainer = document.getElementById('string-select');
-        const volumeBar = document.getElementById('volume-bar');
-        const gainSlider = document.getElementById('gain-slider');
-        const gainValText = document.getElementById('gain-val');
+        <canvas id="dial-canvas" width="340" height="185"></canvas>
 
-        let audioCtx;
-        let analyser;
-        let gainNode;
-        let mediaStreamSource;
-        let isTunerOn = false;
-        let animationFrameId;
-        
-        let smoothedCents = 0;
-        
-        // --- LOCKING VARIABLES ---
-        let uiLockedUntil = 0; // Timestamp for when the UI can update again
-        const LOCK_DURATION_PERFECT = 2500; // 2.5 seconds
-        const LOCK_DURATION_WARN = 1000;    // 1.0 second (Updated)
-        const CONFIDENCE_THRESHOLD = 0.65;  // 65% Certainty (Updated)
+        <div class="note-display">
+            <span class="note-name" id="note-name">--</span><span class="octave-sup" id="octave-el"></span>
+        </div>
 
-        // Meter Settings
-        const METER_RANGE_CENTS = 30; // Zoomed in
+        <div class="status-row">
+            <span class="meta-label" id="cents-label">-- ¢</span>
+            <span class="tuning-status-pill" id="status-pill"></span>
+            <span class="meta-label" id="freq-label" style="text-align:right">--- Hz</span>
+        </div>
 
-        const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        const standardTuning = [
-            { note: 'E', octave: 2, freq: 82.41, displayName: 'E' },
-            { note: 'A', octave: 2, freq: 110.00, displayName: 'A' },
-            { note: 'D', octave: 3, freq: 146.83, displayName: 'D' },
-            { note: 'G', octave: 3, freq: 196.00, displayName: 'G' },
-            { note: 'B', octave: 3, freq: 246.94, displayName: 'B' },
-            { note: 'E', octave: 4, freq: 329.63, displayName: 'e' }
-        ];
+        <div class="level-row">
+            <span class="level-label">Level</span>
+            <div class="level-track"><div class="level-fill" id="level-fill"></div></div>
+        </div>
 
-        // --- SETUP ---
-        gainSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            gainValText.textContent = `${Math.round(val * 100)}%`;
-            if (gainNode) gainNode.gain.value = val;
+        <div class="gain-row">
+            <span class="gain-label">Boost</span>
+            <input type="range" id="gain-slider" min="1" max="5" step="0.1" value="1">
+            <span class="gain-val" id="gain-val">1×</span>
+        </div>
+
+        <button class="main-btn start" id="toggle-btn">Start Tuner</button>
+
+    </div>
+</main>
+
+<footer style="padding: 24px; text-align:center; color:#252535; font-size:12px;">
+    &copy; <script>document.write(new Date().getFullYear())</script> Dibber Lab
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- DOM ---
+    const canvas     = document.getElementById('dial-canvas');
+    const dctx       = canvas.getContext('2d');
+    const tunerCard  = document.getElementById('tuner-card');
+    const noteNameEl = document.getElementById('note-name');
+    const octaveEl   = document.getElementById('octave-el');
+    const centsLabel = document.getElementById('cents-label');
+    const freqLabel  = document.getElementById('freq-label');
+    const statusPill = document.getElementById('status-pill');
+    const levelFill  = document.getElementById('level-fill');
+    const gainSlider = document.getElementById('gain-slider');
+    const gainValEl  = document.getElementById('gain-val');
+    const toggleBtn  = document.getElementById('toggle-btn');
+    const stringsRow = document.getElementById('strings-row');
+
+    // --- STATE ---
+    let audioCtx, analyser, gainNode, streamSource;
+    let isOn = false, rafId;
+    let smoothCents = 0, drawCents = 0;
+    let lockedUntil  = 0;
+    let lastGoodTime = 0;   // timestamp of last valid pitch read
+    let holdState    = 'idle'; // dial state to show during hold
+
+    const LOCK_IN_TUNE = 2400;
+    const LOCK_WARN    = 500;
+    const HOLD_MS      = 1400; // how long to hold last reading after signal drops
+    const CONF_MIN     = 0.65;
+    const METER_RANGE  = 50;
+
+    // --- TUNING DATA ---
+    const STRINGS = [
+        { note:'E', octave:2, freq:82.41  },
+        { note:'A', octave:2, freq:110.00 },
+        { note:'D', octave:3, freq:146.83 },
+        { note:'G', octave:3, freq:196.00 },
+        { note:'B', octave:3, freq:246.94 },
+        { note:'e', octave:4, freq:329.63 }
+    ];
+    const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+    // --- CANVAS SETUP (responsive + HiDPI) ---
+    const DPR    = Math.min(window.devicePixelRatio || 1, 2);
+    const BASE_W = 340, BASE_H = 185;
+
+    // Arc geometry defined in BASE_W × BASE_H coordinate space
+    const CX      = BASE_W / 2;
+    const CY      = BASE_H + 30;
+    const R       = 172;
+    const R_TRACK = R - 10;
+    const A_START = Math.PI * 1.12;
+    const A_END   = Math.PI * 1.88;
+    const A_SPAN  = A_END - A_START;
+
+    function sizeCanvas() {
+        const innerW  = tunerCard.clientWidth - 56; // 28px padding × 2
+        const dispW   = Math.min(BASE_W, Math.max(200, innerW));
+        const dispH   = Math.round(BASE_H * dispW / BASE_W);
+        const sc      = dispW / BASE_W;
+
+        canvas.width        = Math.round(dispW * DPR);
+        canvas.height       = Math.round(dispH * DPR);
+        canvas.style.width  = dispW + 'px';
+        canvas.style.height = dispH + 'px';
+        dctx.setTransform(DPR * sc, 0, 0, DPR * sc, 0, 0);
+    }
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(() => {
+            sizeCanvas();
+            drawDial(drawCents, isOn ? holdState : 'idle');
+        }).observe(tunerCard);
+    }
+
+    function centsToAngle(c) {
+        const t = Math.max(-1, Math.min(1, c / METER_RANGE));
+        return A_START + A_SPAN * (t + 1) / 2;
+    }
+
+    const COL = {
+        trackBg:    '#161622',
+        zoneFlat:   'rgba(251,191,36,0.18)',
+        zoneSharp:  'rgba(248,113,113,0.18)',
+        zoneGreen:  'rgba(16,185,129,0.18)',
+        zoneGreenOn:'rgba(16,185,129,0.55)',
+        tick:       '#252535',
+        amber:      '#f59e0b',
+        red:        '#f87171',
+        green:      '#10b981',
+    };
+
+    function drawDial(cents, state) {
+        dctx.clearRect(0, 0, BASE_W, BASE_H);
+
+        const TW = 18;
+
+        // Background track
+        dctx.beginPath();
+        dctx.arc(CX, CY, R_TRACK, A_START, A_END);
+        dctx.strokeStyle = COL.trackBg;
+        dctx.lineWidth   = TW;
+        dctx.lineCap     = 'butt';
+        dctx.stroke();
+
+        // Flat zone
+        dctx.beginPath();
+        dctx.arc(CX, CY, R_TRACK, A_START, A_START + A_SPAN * 0.40);
+        dctx.strokeStyle = COL.zoneFlat;
+        dctx.lineWidth   = TW;
+        dctx.stroke();
+
+        // Sharp zone
+        dctx.beginPath();
+        dctx.arc(CX, CY, R_TRACK, A_START + A_SPAN * 0.60, A_END);
+        dctx.strokeStyle = COL.zoneSharp;
+        dctx.lineWidth   = TW;
+        dctx.stroke();
+
+        // Center zone
+        dctx.beginPath();
+        dctx.arc(CX, CY, R_TRACK, A_START + A_SPAN * 0.40, A_START + A_SPAN * 0.60);
+        dctx.strokeStyle = state === 'in-tune' ? COL.zoneGreenOn : COL.zoneGreen;
+        dctx.lineWidth   = TW;
+        dctx.stroke();
+
+        // Tick marks
+        [-50,-40,-30,-20,-10,0,10,20,30,40,50].forEach(c => {
+            const a    = centsToAngle(c);
+            const isMaj = c === 0 || Math.abs(c) % 20 === 0;
+            const rOut = isMaj ? R + 4  : R - 2;
+            const rIn  = isMaj ? R - 20 : R - 18;
+            dctx.beginPath();
+            dctx.moveTo(CX + Math.cos(a) * rOut, CY + Math.sin(a) * rOut);
+            dctx.lineTo(CX + Math.cos(a) * rIn,  CY + Math.sin(a) * rIn);
+            dctx.strokeStyle = c === 0 ? '#2a3a3a' : COL.tick;
+            dctx.lineWidth   = c === 0 ? 2.5 : 1.5;
+            dctx.lineCap     = 'round';
+            dctx.stroke();
         });
 
-        function setupStringButtons() {
-            stringSelectContainer.innerHTML = ''; 
-            standardTuning.forEach(target => {
-                const button = document.createElement('button');
-                button.className = 'string-btn p-2 text-lg font-bold rounded bg-gray-700 text-gray-300';
-                button.textContent = target.displayName;
-                stringSelectContainer.appendChild(button);
-            });
-        }
-        
-        function highlightActiveString(activeTarget) {
-            const buttons = document.querySelectorAll('.string-btn');
-            buttons.forEach(button => {
-                if (activeTarget && button.textContent === activeTarget.displayName) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
-                }
-            });
-        }
+        // Needle
+        if (state !== 'idle') {
+            const na = centsToAngle(cents);
+            const nx = CX + Math.cos(na) * (R - 12);
+            const ny = CY + Math.sin(na) * (R - 12);
+            const nc = state === 'in-tune' ? COL.green
+                     : state === 'flat'    ? COL.amber
+                     :                       COL.red;
 
-        // --- PITCH DETECTION ALGORITHM ---
-        function findPitch(buf, sampleRate) {
-            const bufferSize = buf.length;
-            let rms = 0;
-            buf.forEach(val => rms += val * val);
-            rms = Math.sqrt(rms / bufferSize);
+            if (state === 'in-tune') { dctx.shadowColor = COL.green; dctx.shadowBlur = 14; }
 
-            // Volume Visual
-            const volPercent = Math.min(100, (rms * 5) * 100); 
-            volumeBar.style.width = `${volPercent}%`;
-            
-            // 1. RMS Threshold (Noise Gate)
-            if (rms < 0.01) return -1; 
+            dctx.beginPath();
+            dctx.moveTo(CX, CY);
+            dctx.lineTo(nx, ny);
+            dctx.strokeStyle = nc;
+            dctx.lineWidth   = 2.5;
+            dctx.lineCap     = 'round';
+            dctx.stroke();
 
-            // 2. Autocorrelation
-            let r = new Float32Array(bufferSize).map((_, i) => {
-                let sum = 0;
-                for (let j = 0; j < bufferSize - i; j++) sum += buf[j] * buf[j + i];
-                return sum;
-            });
+            dctx.beginPath();
+            dctx.arc(nx, ny, 4, 0, Math.PI * 2);
+            dctx.fillStyle = nc;
+            dctx.fill();
 
-            // Find Peak
-            let d = 0;
-            while (r[d] > r[d + 1]) d++;
-            let maxval = -1, maxpos = -1;
-            for (let i = d; i < bufferSize; i++) {
-                if (r[i] > maxval) { maxval = r[i]; maxpos = i; }
-            }
-            let T0 = maxpos;
-            
-            // 3. CONFIDENCE CHECK
-            // r[0] is the maximum possible correlation (perfect match at 0 lag)
-            const confidence = maxval / r[0];
-            
-            if (confidence < CONFIDENCE_THRESHOLD) return -1;
-
-            // Parabolic Interpolation for precision
-            const [x1, x2, x3] = [r[T0 - 1], r[T0], r[T0 + 1]];
-            const a = (x1 + x3 - 2 * x2) / 2;
-            const b = (x3 - x1) / 2;
-            if (a) T0 = T0 - b / (2 * a);
-            
-            return sampleRate / T0;
-        }
-        
-        function frequencyToNote(frequency) {
-            const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
-            return Math.round(noteNum) + 69;
+            dctx.shadowBlur = 0;
         }
 
-        function lerp(start, end, amt) {
-            return (1 - amt) * start + amt * end;
-        }
+        // Pivot dot
+        dctx.beginPath();
+        dctx.arc(CX, CY, 5, 0, Math.PI * 2);
+        dctx.fillStyle = state === 'in-tune' ? COL.green
+                       : state === 'flat'    ? COL.amber
+                       : state === 'sharp'   ? COL.red
+                       : '#1e1e2c';
+        dctx.fill();
 
-        // --- UPDATE LOOP ---
-        function updateTuner() {
-            if (!analyser) return;
+        // Cent labels
+        dctx.font         = `10px 'JetBrains Mono', monospace`;
+        dctx.textAlign    = 'center';
+        dctx.textBaseline = 'middle';
+        [-40,-20,0,20,40].forEach(c => {
+            const a  = centsToAngle(c);
+            const lr = R - 32;
+            dctx.fillStyle = c === 0 ? '#2a3a3a' : '#1e1e2c';
+            dctx.fillText(c === 0 ? '0' : (c > 0 ? `+${c}` : `${c}`),
+                CX + Math.cos(a) * lr, CY + Math.sin(a) * lr);
+        });
+    }
 
-            const buffer = new Float32Array(analyser.fftSize);
-            analyser.getFloatTimeDomainData(buffer);
-            const pitch = findPitch(buffer, audioCtx.sampleRate);
-            
-            const now = Date.now();
-            const isLocked = now < uiLockedUntil;
+    sizeCanvas();
+    drawDial(0, 'idle');
 
-            // --- 1. HANDLE SILENCE / LOW CONFIDENCE ---
-            if (pitch === -1) {
-                // If the UI is NOT locked, we can clear the display
-                if (!isLocked) {
-                    smoothedCents = lerp(smoothedCents, 0, 0.05); 
-                    tuningNeedle.style.left = `50%`;
-                    
-                    noteNameDisplay.textContent = "--";
-                    octaveDisplay.textContent = '';
-                    noteFreqDisplay.textContent = "Listening...";
-                    tuningStatus.innerHTML = "&nbsp;";
-                    
-                    tunerDisplay.classList.remove('glow-success', 'glow-warn');
-                    tuningNeedle.style.backgroundColor = '#f59e0b';
-                    highlightActiveString(null);
-                    if (isTunerOn) subHeading.textContent = "Play a string...";
-                }
-                // If locked, we do nothing (keep showing the result)
-                animationFrameId = requestAnimationFrame(updateTuner);
-                return;
-            }
-
-            // --- 2. HANDLE NOTE DETECTION ---
-            
-            // Find closest string
-            let closestTarget = null;
-            let smallestCentsDiff = Infinity;
-            let currentRawCents = 0;
-
-            standardTuning.forEach(targetNote => {
-                const centsDiff = 1200 * Math.log2(pitch / targetNote.freq);
-                if (Math.abs(centsDiff) < Math.abs(smallestCentsDiff)) {
-                    smallestCentsDiff = centsDiff;
-                    closestTarget = targetNote;
-                    currentRawCents = centsDiff;
-                }
-            });
-
-            // Note Info
-            const detectedNoteNum = frequencyToNote(pitch);
-            const detectedNoteName = noteStrings[detectedNoteNum % 12];
-            const detectedOctave = Math.floor(detectedNoteNum / 12) - 1;
-
-            // --- 3. UI UPDATES ---
-            
-            // Always update the needle & note name (Live Feedback)
-            // Even if text is locked, seeing the needle move is vital for tuning
-            if (!isLocked) {
-                noteNameDisplay.textContent = detectedNoteName;
-                octaveDisplay.textContent = detectedOctave;
-                noteFreqDisplay.textContent = `${pitch.toFixed(1)} Hz`;
-            }
-
-            if (closestTarget && Math.abs(currentRawCents) < 100) {
-                
-                highlightActiveString(closestTarget);
-                smoothedCents = lerp(smoothedCents, currentRawCents, 0.2); // Smooth movement
-
-                // Map cents to needle %
-                const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
-                const visualCents = clamp(smoothedCents, -METER_RANGE_CENTS, METER_RANGE_CENTS);
-                const percentOffset = (visualCents / METER_RANGE_CENTS) * 50; 
-                tuningNeedle.style.left = `${50 + percentOffset}%`;
-
-                // --- 4. STATUS LOCKING LOGIC ---
-                // Only change status text if we aren't locked
-                if (!isLocked) {
-                    
-                    if (Math.abs(smoothedCents) < 5) {
-                        // PERFECT
-                        tuningStatus.textContent = "PERFECT";
-                        tuningStatus.className = 'text-2xl font-bold tracking-widest status-perfect';
-                        
-                        tuningNeedle.style.backgroundColor = '#34d399'; 
-                        tunerDisplay.classList.add('glow-success');
-                        tunerDisplay.classList.remove('glow-warn');
-                        
-                        // LOCK FOR 2.5s
-                        uiLockedUntil = now + LOCK_DURATION_PERFECT;
-
-                    } else {
-                        // OFF PITCH
-                        tuningNeedle.style.backgroundColor = '#f59e0b';
-                        tunerDisplay.classList.remove('glow-success');
-                        
-                        if(smoothedCents < 0) {
-                             tuningStatus.textContent = "TOO LOW";
-                             tuningStatus.className = 'text-xl font-bold status-flat';
-                             tunerDisplay.classList.add('glow-warn');
-                             // LOCK FOR 1.0s
-                             uiLockedUntil = now + LOCK_DURATION_WARN;
-                        } else {
-                             tuningStatus.textContent = "TOO HIGH";
-                             tuningStatus.className = 'text-xl font-bold status-sharp';
-                             tunerDisplay.classList.add('glow-warn');
-                             // LOCK FOR 1.0s
-                             uiLockedUntil = now + LOCK_DURATION_WARN;
-                        }
-                    }
-                }
-
-            } else {
-                // Not close to any string
-                if(!isLocked) {
-                    highlightActiveString(null);
-                    tuningNeedle.style.left = `50%`;
-                    tuningNeedle.style.backgroundColor = '#4b5563'; 
-                    tuningStatus.innerHTML = "&nbsp;";
-                    tunerDisplay.classList.remove('glow-success', 'glow-warn');
-                }
-            }
-
-            animationFrameId = requestAnimationFrame(updateTuner);
-        }
-
-        // --- CONTROL ---
-        async function startTuner() {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: false,
-                        autoGainControl: false,
-                        noiseSuppression: false, // We handle noise manually
-                        latency: 0
-                    }
-                });
-
-                if (audioCtx.state === 'suspended') {
-                    await audioCtx.resume();
-                }
-
-                // Gain Node
-                gainNode = audioCtx.createGain();
-                gainNode.gain.value = parseFloat(gainSlider.value); 
-
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 4096; 
-                
-                mediaStreamSource = audioCtx.createMediaStreamSource(stream);
-                mediaStreamSource.connect(gainNode);
-                gainNode.connect(analyser);
-
-                isTunerOn = true;
-                toggleButton.textContent = "STOP LISTENING";
-                toggleButton.classList.replace('bg-emerald-600', 'bg-red-600');
-                toggleButton.classList.replace('hover:bg-emerald-500', 'hover:bg-red-500');
-                toggleButton.classList.replace('shadow-emerald-900/50', 'shadow-red-900/50');
-                
-                subHeading.textContent = "Play a string to begin tuning...";
-                stringSelectContainer.classList.remove('opacity-50');
-                
-                updateTuner();
-            } catch (err) {
-                console.error(err);
-                alert("Microphone access failed. Please ensure you are using HTTPS or localhost.");
-            }
-        }
-
-        function stopTuner() {
-            if (mediaStreamSource) mediaStreamSource.mediaStream.getTracks().forEach(track => track.stop());
-            if (audioCtx) audioCtx.close();
-            
-            cancelAnimationFrame(animationFrameId);
-            isTunerOn = false;
-            
-            toggleButton.textContent = "START LISTENING";
-            toggleButton.classList.replace('bg-red-600', 'bg-emerald-600');
-            toggleButton.classList.replace('hover:bg-red-500', 'hover:bg-emerald-500');
-            toggleButton.classList.replace('shadow-red-900/50', 'shadow-emerald-900/50');
-            
-            subHeading.textContent = "Standard Tuning (EADGBe)";
-            stringSelectContainer.classList.add('opacity-50');
-            highlightActiveString(null);
-            
-            tunerDisplay.classList.remove('glow-success', 'glow-warn');
-            noteNameDisplay.textContent = "--";
-            noteFreqDisplay.textContent = "0.00 Hz";
-            tuningStatus.innerHTML = "&nbsp;";
-            tuningNeedle.style.left = `50%`;
-            volumeBar.style.width = '0%';
-        }
-
-        toggleButton.addEventListener('click', () => isTunerOn ? stopTuner() : startTuner());
-        setupStringButtons();
+    // --- STRING BUTTONS ---
+    STRINGS.forEach((s, i) => {
+        const btn = document.createElement('button');
+        btn.className   = 'string-btn';
+        btn.textContent = s.note;
+        btn.dataset.i   = i;
+        stringsRow.appendChild(btn);
     });
-    </script>
+
+    function setActiveString(target, state) {
+        document.querySelectorAll('.string-btn').forEach((btn, i) => {
+            btn.classList.remove('active','in-tune');
+            if (target && STRINGS[i].freq === target.freq && state) {
+                btn.classList.add(state);
+            }
+        });
+    }
+
+    // --- PITCH DETECTION ---
+    function detectPitch(buf, sampleRate) {
+        const n = buf.length;
+        let rms = 0;
+        for (let i = 0; i < n; i++) rms += buf[i] * buf[i];
+        rms = Math.sqrt(rms / n);
+
+        levelFill.style.width = `${Math.min(100, rms * 350)}%`;
+        if (rms < 0.008) return -1;
+
+        const r = new Float32Array(n);
+        for (let lag = 0; lag < n; lag++) {
+            let s = 0;
+            for (let j = 0; j < n - lag; j++) s += buf[j] * buf[j + lag];
+            r[lag] = s;
+        }
+
+        let d = 0;
+        while (d < n - 1 && r[d] > r[d + 1]) d++;
+
+        let maxVal = -1, maxPos = -1;
+        for (let i = d; i < n; i++) {
+            if (r[i] > maxVal) { maxVal = r[i]; maxPos = i; }
+        }
+
+        if (maxPos < 2 || r[0] === 0 || maxVal / r[0] < CONF_MIN) return -1;
+
+        let T = maxPos;
+        const a = (r[T-1] + r[T+1] - 2*r[T]) / 2;
+        const b = (r[T+1] - r[T-1]) / 2;
+        if (a !== 0) T = T - b / (2 * a);
+
+        return sampleRate / T;
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    // --- UPDATE LOOP ---
+    function update() {
+        if (!analyser) return;
+        const buf = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(buf);
+        const pitch = detectPitch(buf, audioCtx.sampleRate);
+
+        const now    = Date.now();
+        const locked = now < lockedUntil;
+        const inHold = (now - lastGoodTime) < HOLD_MS;
+
+        if (pitch === -1) {
+            if (inHold || locked) {
+                // Signal dropped but we're within the hold window —
+                // keep the last reading visible and drift the needle slowly back
+                smoothCents = lerp(smoothCents, 0, 0.025);
+                drawCents   = lerp(drawCents, smoothCents, 0.08);
+                drawDial(drawCents, holdState);
+            } else {
+                // Silence confirmed — reset to idle
+                smoothCents = lerp(smoothCents, 0, 0.1);
+                drawCents   = lerp(drawCents, smoothCents, 0.15);
+                drawDial(drawCents, 'idle');
+                noteNameEl.textContent = '--';
+                noteNameEl.className   = 'note-name';
+                octaveEl.textContent   = '';
+                octaveEl.className     = 'octave-sup';
+                centsLabel.textContent = '-- ¢';
+                centsLabel.className   = 'meta-label';
+                freqLabel.textContent  = '--- Hz';
+                freqLabel.className    = 'meta-label';
+                statusPill.textContent = '';
+                statusPill.className   = 'tuning-status-pill';
+                tunerCard.classList.remove('in-tune');
+                setActiveString(null, null);
+            }
+            rafId = requestAnimationFrame(update);
+            return;
+        }
+
+        // Valid pitch detected
+        lastGoodTime = now;
+
+        let closest = null, minDiff = Infinity;
+        STRINGS.forEach(s => {
+            const d = Math.abs(1200 * Math.log2(pitch / s.freq));
+            if (d < minDiff) { minDiff = d; closest = s; }
+        });
+
+        const rawCents  = closest ? 1200 * Math.log2(pitch / closest.freq) : 0;
+        const midiNote  = Math.round(12 * Math.log2(pitch / 440)) + 69;
+        const detNote   = NOTE_NAMES[((midiNote % 12) + 12) % 12];
+        const detOctave = Math.floor(midiNote / 12) - 1;
+
+        if (closest && Math.abs(rawCents) < 90) {
+            smoothCents = lerp(smoothCents, rawCents, 0.22);
+            drawCents   = lerp(drawCents, smoothCents, 0.18);
+
+            if (!locked) {
+                noteNameEl.textContent = detNote;
+                noteNameEl.className   = 'note-name active';
+                octaveEl.textContent   = detOctave;
+                octaveEl.className     = 'octave-sup active';
+                freqLabel.textContent  = `${pitch.toFixed(1)} Hz`;
+                freqLabel.className    = 'meta-label active';
+                const sign = smoothCents >= 0 ? '+' : '';
+                centsLabel.textContent = `${sign}${smoothCents.toFixed(1)} ¢`;
+                centsLabel.className   = 'meta-label active';
+
+                const absCents = Math.abs(smoothCents);
+
+                if (absCents < 5) {
+                    holdState = 'in-tune';
+                    drawDial(drawCents, 'in-tune');
+                    noteNameEl.className   = 'note-name in-tune';
+                    octaveEl.className     = 'octave-sup in-tune';
+                    statusPill.textContent = 'In Tune';
+                    statusPill.className   = 'tuning-status-pill in-tune';
+                    tunerCard.classList.add('in-tune');
+                    setActiveString(closest, 'in-tune');
+                    lockedUntil = now + LOCK_IN_TUNE;
+                } else {
+                    holdState = smoothCents < 0 ? 'flat' : 'sharp';
+                    tunerCard.classList.remove('in-tune');
+                    setActiveString(closest, 'active');
+
+                    if (smoothCents < 0) {
+                        drawDial(drawCents, 'flat');
+                        statusPill.textContent = 'Too Low';
+                        statusPill.className   = 'tuning-status-pill flat';
+                    } else {
+                        drawDial(drawCents, 'sharp');
+                        statusPill.textContent = 'Too High';
+                        statusPill.className   = 'tuning-status-pill sharp';
+                    }
+                    lockedUntil = now + LOCK_WARN;
+                }
+            } else {
+                // Locked — keep needle animated
+                const dialSt = Math.abs(smoothCents) < 5 ? 'in-tune'
+                             : smoothCents < 0 ? 'flat' : 'sharp';
+                drawDial(drawCents, dialSt);
+            }
+        }
+
+        rafId = requestAnimationFrame(update);
+    }
+
+    // --- AUDIO ---
+    async function start() {
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false, latency: 0 }
+            });
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+            gainNode = audioCtx.createGain();
+            gainNode.gain.value = parseFloat(gainSlider.value);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 4096;
+            streamSource = audioCtx.createMediaStreamSource(stream);
+            streamSource.connect(gainNode);
+            gainNode.connect(analyser);
+
+            isOn = true;
+            toggleBtn.textContent = 'Stop';
+            toggleBtn.className   = 'main-btn stop';
+            update();
+        } catch (e) {
+            alert('Microphone access denied. Please allow mic access and try again.');
+        }
+    }
+
+    function resetUI() {
+        smoothCents = 0; drawCents = 0;
+        lastGoodTime = 0; holdState = 'idle';
+        drawDial(0, 'idle');
+        noteNameEl.textContent = '--';
+        noteNameEl.className   = 'note-name';
+        octaveEl.textContent   = '';
+        octaveEl.className     = 'octave-sup';
+        centsLabel.textContent = '-- ¢';
+        centsLabel.className   = 'meta-label';
+        freqLabel.textContent  = '--- Hz';
+        freqLabel.className    = 'meta-label';
+        statusPill.textContent = '';
+        statusPill.className   = 'tuning-status-pill';
+        tunerCard.classList.remove('in-tune');
+        levelFill.style.width = '0%';
+        setActiveString(null, null);
+    }
+
+    function stop() {
+        if (streamSource) streamSource.mediaStream.getTracks().forEach(t => t.stop());
+        if (audioCtx)     audioCtx.close();
+        cancelAnimationFrame(rafId);
+        isOn = false;
+        toggleBtn.textContent = 'Start Tuner';
+        toggleBtn.className   = 'main-btn start';
+        resetUI();
+    }
+
+    toggleBtn.addEventListener('click', () => isOn ? stop() : start());
+
+    gainSlider.addEventListener('input', e => {
+        const v = parseFloat(e.target.value);
+        gainValEl.textContent = `${v.toFixed(1)}×`;
+        if (gainNode) gainNode.gain.value = v;
+    });
+});
+</script>
 </body>
 </html>
