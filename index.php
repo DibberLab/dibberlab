@@ -84,6 +84,7 @@
             { name: "Delay Calculator", category: "Music", icon: "🎛️", link: "/delay-calculator", desc: "Convert BPM to milliseconds." },
             { name: "Sight Reader", category: "Music", icon: "👀", link: "/sight-reading", desc: "Flashcards for reading sheet music." },
             { name: "Drum Machine", category: "Music", icon: "🥁", link: "/simple-drum-machine", desc: "Basic 16-step beat sequencer." },
+            { name: "Chord Progression Generator", category: "Music", icon: "🎲", link: "/chord-progression-generator", desc: "Roll a random chord progression in any key." },
 
             // --- DEV TOOLS ---
             { name: "JSON Formatter", category: "Developer", icon: "🔮", link: "/json-formatter", desc: "Validate and beautify JSON data." },
